@@ -1,0 +1,19 @@
+{
+    "name": "Solana Ape 2",
+    "symbol": "",
+    "image": "2.png",
+    "properties": {
+      "files": [
+        {
+          "uri": "2.png",
+          "type": "image/png"
+        }
+      ],
+      "creators": [
+        {
+          "address": "3b5KdrbBBbQizMLo5UVLHMChAH2JK71HqQwMY9Y1CY3F",
+          "share": 100
+        }
+      ]
+    }
+  }
