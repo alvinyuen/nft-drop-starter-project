@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import twitterLogo from './assets/twitter-logo.svg';
 import apeLogo from './assets/ape-logo.png';
@@ -9,6 +9,9 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
   // Actions
+
+  // State
+  const [walletAddress, setWalletAddress] = useState(null);
 
   /*
   * Declare your function
@@ -28,7 +31,13 @@ const App = () => {
         console.log(
           'Connected with Public Key:',
           response.publicKey.toString()
-        ); 
+        );
+
+         /*
+           * Set the user's publicKey in state to be used later!
+           */
+         setWalletAddress(response.publicKey.toString());
+
       } else {
         alert('Solana object not found! Get a Phantom Wallet 👻');
       }
@@ -37,7 +46,15 @@ const App = () => {
     }
   };
 
-  const connectWallet = async () => {};
+  const connectWallet = async () => {
+    const { solana } = window;
+
+    if (solana) {
+      const response = await solana.connect();
+      console.log('Connected with Public Key:', response.publicKey.toString());
+      setWalletAddress(response.publicKey.toString());
+    }
+  };
   /*
    * Render mint button when user has not connected wallet yet
    */
@@ -70,7 +87,7 @@ const App = () => {
           <p className="header">Solana Apes</p>
           <p className="sub-text">NFT minting machine</p>
           {/* Render your connect to wallet button right here */}
-          {renderNotConnectedContainer()}
+          {!walletAddress && renderNotConnectedContainer()}
         </div>
       </div>
     </div>
