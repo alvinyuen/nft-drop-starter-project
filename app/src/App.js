@@ -25,6 +25,18 @@ const App = () => {
       console.error(error);
     }
   };
+
+  /*
+   * When our component first mounts, let's check to see if we have a connected
+   * Phantom Wallet
+   */
+  useEffect(() => {
+    const onLoad = async () => {
+      await checkIfWalletIsConnected();
+    };
+    window.addEventListener('load', onLoad);
+    return () => window.removeEventListener('load', onLoad);
+  }, []);
   
   return (
     <div className="App">
