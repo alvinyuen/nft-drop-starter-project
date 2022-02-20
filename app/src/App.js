@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import './App.css';
 import twitterLogo from './assets/twitter-logo.svg';
+import apeLogo from './assets/ape-logo.png';
 
 // Constants
 const TWITTER_HANDLE = '_buildspace';
@@ -36,6 +37,19 @@ const App = () => {
     }
   };
 
+  const connectWallet = async () => {};
+  /*
+   * Render mint button when user has not connected wallet yet
+   */
+  const renderNotConnectedContainer = () => (
+    <button
+      className="cta-button connect-wallet-button"
+      onClick={connectWallet}
+    >
+      Connect to Wallet
+    </button>
+  );
+
   /*
    * When our component first mounts, let's check to see if we have a connected
    * Phantom Wallet
@@ -52,17 +66,11 @@ const App = () => {
     <div className="App">
       <div className="container">
         <div className="header-container">
-          <p className="header">🍭 Candy Drop</p>
-          <p className="sub-text">NFT drop machine with fair mint</p>
-        </div>
-        <div className="footer-container">
-          <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
-          <a
-            className="footer-text"
-            href={TWITTER_LINK}
-            target="_blank"
-            rel="noreferrer"
-          >{`built on @${TWITTER_HANDLE}`}</a>
+          <img alt="ape logo" className="ape-logo" src={apeLogo} />
+          <p className="header">Solana Apes</p>
+          <p className="sub-text">NFT minting machine</p>
+          {/* Render your connect to wallet button right here */}
+          {renderNotConnectedContainer()}
         </div>
       </div>
     </div>

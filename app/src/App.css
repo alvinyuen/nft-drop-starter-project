@@ -57,9 +57,14 @@
   font-weight: bold;
 }
 
+.ape-logo {
+  max-width: 150px;
+  margin-bottom: 10px;
+}
+
 .connect-wallet-button {
   color: white;
-  background: -webkit-linear-gradient(left, #ff8867, #ff52ff);
+  background: -webkit-linear-gradient(left, #00FFA3, #03E1FF, #DC1FFF);
   background-size: 200% 200%;
   animation: gradient-animation 4s ease infinite;
 }
