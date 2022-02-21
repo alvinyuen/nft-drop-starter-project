@@ -426,14 +426,22 @@ const renderDropTimer = () => {
 
   return (
     // Only show this if machineStats is available
-    candyMachine && (
+    candyMachine && candyMachine.state && (
       <div className="machine-container">
          {/* Add this at the beginning of our component */}
         {renderDropTimer()}
         <p>{`Items Minted: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
-        <button className="cta-button mint-button" onClick={mintToken}>
+        {/* Check to see if these properties are equal! */}
+        {candyMachine.state.itemsRedeemed === candyMachine.state.itemsAvailable ? (
+          <p className="sub-text">Sold Out 🙊</p>
+        ) : (
+          <button
+            className="cta-button mint-button"
+            onClick={mintToken}
+          >
             Mint NFT
-        </button>
+          </button>
+        )}
       </div>
     )
   );
