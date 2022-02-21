@@ -13,6 +13,7 @@ import {
   getNetworkToken,
   CIVIC
 } from './helpers';
+import CountdownTimer from '../CountdownTimer';
 
 const { SystemProgram } = web3;
 const opts = {
@@ -405,11 +406,30 @@ const CandyMachine = ({ walletAddress }) => {
     });
   };
 
+  // Create render function
+const renderDropTimer = () => {
+  // Get the current date and dropDate in a JavaScript Date object
+  const currentDate = new Date();
+  const dropDate = new Date(candyMachine.state.goLiveData * 1000);
+
+  console.log(currentDate);
+
+  // If currentDate is before dropDate, render our Countdown component
+  if (currentDate < dropDate) {
+    // Don't forget to pass over your dropDate!
+    return <CountdownTimer dropDate={dropDate} />;
+  }
+
+  // Else let's just return the current drop date
+  return <p>{`Drop Date: ${candyMachine.state.goLiveDateTimeString}`}</p>;
+};
+
   return (
     // Only show this if machineStats is available
     candyMachine && (
       <div className="machine-container">
-        <p>{`Drop Date: ${candyMachine.state.goLiveDateTimeString}`}</p>
+         {/* Add this at the beginning of our component */}
+        {renderDropTimer()}
         <p>{`Items Minted: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
         <button className="cta-button mint-button" onClick={mintToken}>
             Mint NFT
