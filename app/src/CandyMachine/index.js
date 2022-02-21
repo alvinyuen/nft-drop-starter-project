@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { MintLayout, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
@@ -93,6 +93,8 @@ const CandyMachine = ({ walletAddress }) => {
       await getAtaForMint(mint.publicKey, walletAddress.publicKey)
     )[0];
   
+    // Here we're creating an account for our NFT. In Solana, programs are stateless which is very different 
+    // from Ethereum where contracts hold state
     const userPayingAccountAddress = candyMachine.state.tokenMint
       ? (await getAtaForMint(candyMachine.state.tokenMint, walletAddress.publicKey))[0]
       : walletAddress.publicKey;
@@ -101,6 +103,9 @@ const CandyMachine = ({ walletAddress }) => {
     const remainingAccounts = [];
     const signers = [mint];
     const cleanupInstructions = [];
+
+    // Here's are all the params candy machine needs to mint the NFT. It needs everything from userPayingAccountAddress 
+    // (which is the person paying + receiving for the NFT) to the mint which is account address of the NFT we'll be minting.
     const instructions = [
       web3.SystemProgram.createAccount({
         fromPubkey: walletAddress.publicKey,
@@ -134,6 +139,9 @@ const CandyMachine = ({ walletAddress }) => {
         1,
       ),
     ];
+
+    // In Solana, a transaction is a bundle of instructions. So, here we bundle a few instructions 
+    // which are basically functions that live on our candy machine. Metaplex gave us these functions. We just hit them.
   
     if (candyMachine.state.gatekeeper) {
       remainingAccounts.push({
@@ -256,6 +264,11 @@ const CandyMachine = ({ walletAddress }) => {
     const [candyMachineCreator, creatorBump] = await getCandyMachineCreator(
       candyMachineAddress,
     );
+
+    // we're checking if the Candy machine is using a captcha to prevent bots (gatekeeper), 
+    // if there is a whitelist setup, or if the mint is token gated. 
+    // Each of these has a different set of checks which the users' account needs to pass. 
+    // Once passed, additional instructions are pushed into the transaction.
   
     instructions.push(
       await candyMachine.program.instruction.mintNft(creatorBump, {
@@ -282,6 +295,7 @@ const CandyMachine = ({ walletAddress }) => {
       }),
     );
   
+    // instructions for actually minting the NFT.
     try {
       return (
         await sendTransactions(
@@ -297,14 +311,111 @@ const CandyMachine = ({ walletAddress }) => {
     return [];
   };
 
+  // Add state property inside your component like this
+  const [candyMachine, setCandyMachine] = useState(null);
+
+  useEffect(() => {
+    getCandyMachineState();
+  }, []);	
+
+  const getProvider = () => {
+    const rpcHost = process.env.REACT_APP_SOLANA_RPC_HOST;
+    // Create a new connection object
+    const connection = new Connection(rpcHost);
+    
+    // Create a new Solana provider object
+    const provider = new Provider(
+      connection,
+      window.solana,
+      opts.preflightCommitment
+    );
+  
+    return provider;
+  };
+
+  // Declare getCandyMachineState as an async method
+  const getCandyMachineState = async () => {
+    const provider = getProvider();
+    
+    // Get metadata about your deployed candy machine program
+    const idl = await Program.fetchIdl(candyMachineProgram, provider);
+
+    // Create a program that you can call
+    const program = new Program(idl, candyMachineProgram, provider);
+
+    // Fetch the metadata from your candy machine
+    const candyMachine = await program.account.candyMachine.fetch(
+      process.env.REACT_APP_CANDY_MACHINE_ID
+    );
+    
+    // Parse out all our metadata and log it out
+    const itemsAvailable = candyMachine.data.itemsAvailable.toNumber();
+    const itemsRedeemed = candyMachine.itemsRedeemed.toNumber();
+    const itemsRemaining = itemsAvailable - itemsRedeemed;
+    const goLiveData = candyMachine.data.goLiveDate.toNumber();
+    const presale =
+      candyMachine.data.whitelistMintSettings &&
+      candyMachine.data.whitelistMintSettings.presale &&
+      (!candyMachine.data.goLiveDate ||
+        candyMachine.data.goLiveDate.toNumber() > new Date().getTime() / 1000);
+    
+    // We will be using this later in our UI so let's generate this now
+    const goLiveDateTimeString = `${new Date(
+      goLiveData * 1000
+    ).toGMTString()}`
+
+    // Add this data to your state to render
+    setCandyMachine({
+      id: process.env.REACT_APP_CANDY_MACHINE_ID,
+      program,
+      state: {
+        itemsAvailable,
+        itemsRedeemed,
+        itemsRemaining,
+        goLiveData,
+        goLiveDateTimeString,
+        isSoldOut: itemsRemaining === 0,
+        isActive:
+          (presale ||
+            candyMachine.data.goLiveDate.toNumber() < new Date().getTime() / 1000) &&
+          (candyMachine.endSettings
+            ? candyMachine.endSettings.endSettingType.date
+              ? candyMachine.endSettings.number.toNumber() > new Date().getTime() / 1000
+              : itemsRedeemed < candyMachine.endSettings.number.toNumber()
+            : true),
+        isPresale: presale,
+        goLiveDate: candyMachine.data.goLiveDate,
+        treasury: candyMachine.wallet,
+        tokenMint: candyMachine.tokenMint,
+        gatekeeper: candyMachine.data.gatekeeper,
+        endSettings: candyMachine.data.endSettings,
+        whitelistMintSettings: candyMachine.data.whitelistMintSettings,
+        hiddenSettings: candyMachine.data.hiddenSettings,
+        price: candyMachine.data.price,
+      },
+    });
+
+    console.log({
+      itemsAvailable,
+      itemsRedeemed,
+      itemsRemaining,
+      goLiveData,
+      goLiveDateTimeString,
+      presale,
+    });
+  };
+
   return (
-    <div className="machine-container">
-      <p>Drop Date:</p>
-      <p>Items Minted:</p>
-      <button className="cta-button mint-button" onClick={mintToken}>
-        Mint NFT
-      </button>
-    </div>
+    // Only show this if machineStats is available
+    candyMachine && (
+      <div className="machine-container">
+        <p>{`Drop Date: ${candyMachine.state.goLiveDateTimeString}`}</p>
+        <p>{`Items Minted: ${candyMachine.state.itemsRedeemed} / ${candyMachine.state.itemsAvailable}`}</p>
+        <button className="cta-button mint-button" onClick={mintToken}>
+            Mint NFT
+        </button>
+      </div>
+    )
   );
 };
 
